@@ -1,15 +1,15 @@
-
 import React, { Component } from 'react';
 import { Card, Form, Button, Col } from 'react-bootstrap';
-import { faPlusSquare, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faUndo, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import axios from 'axios';
-import {myToast} from './myToast'
+import { useParams, useNavigate } from 'react-router-dom';
 
-export default class Voiture extends Component {
+class VoitureEditClass extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      id: props.id,  
       marque: '',
       modele: '',
       couleur: '',
@@ -17,68 +17,89 @@ export default class Voiture extends Component {
       prix: '',
       immatricule: ''
     };
-
-    // Liaison des fonctions
-    this.voitureChange = this.voitureChange.bind(this);
-    this.submitVoiture = this.submitVoiture.bind(this);
-    this.resetVoiture = this.resetVoiture.bind(this);
   }
 
-  initialState = {
-    marque: '',
-    modele: '',
-    couleur: '',
-    immatricule: '',
-    annee: '',
-    prix: ''
-  };
-
-  // Réinitialisation du formulaire
-  resetVoiture() {
-    this.setState(this.initialState);
-  }
-
-  // Fonction pour gérer les changements de valeur dans les inputs
-  voitureChange(event) {
-    this.setState({
-      [event.target.name]: event.target.value
-    });
-  }
-
-  // Fonction pour gérer la soumission du formulaire
-  submitVoiture(event) {
-    event.preventDefault();
-    const voiture = {
-      marque: this.state.marque,
-      modele: this.state.modele,
-      couleur: this.state.couleur,
-      immatricule: this.state.immatricule,
-      annee: this.state.annee,
-      prix: this.state.prix
-    };
-
-    // Envoi de la requête POST via Axios
-    axios.post("http://localhost:8080/voitures/add", voiture)
+  componentDidMount() {
+    console.log("Composant monté, récupération des données pour l'ID :", this.state.id);
+    
+    axios.get(`http://localhost:8080/voitures/${this.state.id}`)
       .then(response => {
-        if (response.data != null) {
+        console.log("Données récupérées :", response.data);
+        
+        if (response.data) {
           this.setState({
-            showToast: true,
-            message: "Voiture ajoutée avec succès",
+            marque: response.data.marque || '',
+            modele: response.data.modele || '',
+            couleur: response.data.couleur || '',
+            annee: response.data.annee || '',
+            prix: response.data.prix || '',
+            immatricule: response.data.immatricule || ''
+          }, () => {
+            console.log("État mis à jour :", this.state);
           });
-          setTimeout(() => this.setState({ showToast: false }), 3000); // Cacher le toast après 3 secondes
-          this.resetVoiture(); // Réinitialiser le formulaire
+        } else {
+          console.warn("Aucune donnée trouvée pour l'ID :", this.state.id);
         }
       })
       .catch(error => {
-        console.error("Erreur lors de l'ajout de la voiture :", error);
+        console.error("Erreur lors de la récupération de la voiture : ", error);
       });
+  }
+
+  handleChange = (event) => {
+    console.log("Changement de champ :", event.target.name, "Nouvelle valeur :", event.target.value);
+    
+    this.setState({
+      [event.target.name]: event.target.value
+    }, () => {
+      console.log("État mis à jour après changement :", this.state);
+    });
+  }
+
+  handleSubmit = (event) => {
+    event.preventDefault();
+    console.log("Soumission du formulaire, état actuel :", this.state);
+    
+    const updatedVoiture = {
+      marque: this.state.marque,
+      modele: this.state.modele,
+      couleur: this.state.couleur,
+      annee: this.state.annee,
+      prix: this.state.prix,
+      immatricule: this.state.immatricule
+    };
+
+    axios.put(`http://localhost:8080/voitures/${this.state.id}`, updatedVoiture)
+      .then(response => {
+        console.log("Réponse après mise à jour :", response.data);
+        
+        if (response.data) {
+          alert("Voiture mise à jour avec succès");
+          this.props.navigate("/list"); 
+        }
+      })
+      .catch(error => {
+        console.error("Erreur lors de la mise à jour de la voiture : ", error);
+      });
+  }
+
+  handleReset = () => {
+    console.log("Réinitialisation du formulaire");
+    this.setState({
+      marque: '',
+      modele: '',
+      couleur: '',
+      annee: '',
+      prix: '',
+      immatricule: ''
+    });
   }
 
   render() {
     return (
       <Card className="border border-dark bg-dark text-white">
-        <Card.Header><FontAwesomeIcon icon={faPlusSquare} /> Ajouter Voiture</Card.Header>
-        <Form onReset={this.resetVoiture} onSubmit={this.submitVoiture} id="VoitureFormId">
+        <Card.Header><FontAwesomeIcon icon={faEdit} /> Modifier Voiture</Card.Header>
+        <Form onReset={this.handleReset} onSubmit={this.handleSubmit} id="VoitureEditFormId">
           <Card.Body>
             <Form.Row>
               <Form.Group as={Col} controlId="formGridMarque">
@@ -88,9 +109,8 @@ export default class Voiture extends Component {
                   name="marque"
                   type="text"
                   className="bg-dark text-white"
-                  placeholder="Entrez Marque Voiture"
                   value={this.state.marque}
-                  onChange={this.voitureChange}
+                  onChange={this.handleChange}
                 />
               </Form.Group>
 
@@ -101,9 +121,8 @@ export default class Voiture extends Component {
                   name="modele"
                   type="text"
                   className="bg-dark text-white"
-                  placeholder="Entrez Modèle Voiture"
                   value={this.state.modele}
-                  onChange={this.voitureChange}
+                  onChange={this.handleChange}
                 />
               </Form.Group>
 
@@ -114,9 +133,8 @@ export default class Voiture extends Component {
                   name="couleur"
                   type="text"
                   className="bg-dark text-white"
-                  placeholder="Entrez Couleur Voiture"
                   value={this.state.couleur}
-                  onChange={this.voitureChange}
+                  onChange={this.handleChange}
                 />
               </Form.Group>
 
@@ -127,9 +145,8 @@ export default class Voiture extends Component {
                   name="immatricule"
                   type="text"
                   className="bg-dark text-white"
-                  placeholder="Entrez Immatricule Voiture"
                   value={this.state.immatricule}
-                  onChange={this.voitureChange}
+                  onChange={this.handleChange}
                 />
               </Form.Group>
 
@@ -140,9 +157,8 @@ export default class Voiture extends Component {
                   name="annee"
                   type="text"
                   className="bg-dark text-white"
-                  placeholder="Entrez Année Voiture"
                   value={this.state.annee}
-                  onChange={this.voitureChange}
+                  onChange={this.handleChange}
                 />
               </Form.Group>
 
@@ -153,19 +169,18 @@ export default class Voiture extends Component {
                   name="prix"
                   type="text"
                   className="bg-dark text-white"
-                  placeholder="Entrez Prix Voiture"
                   value={this.state.prix}
-                  onChange={this.voitureChange}
+                  onChange={this.handleChange}
                 />
               </Form.Group>
             </Form.Row>
           </Card.Body>
           <Card.Footer style={{ textAlign: "right" }}>
             <Button size="sm" variant="success" type="submit">
-              <FontAwesomeIcon icon={faSave} /> Submit
+              <FontAwesomeIcon icon={faSave} /> Sauvegarder
             </Button>
             <Button size="sm" variant="info" type="reset">
-              <FontAwesomeIcon icon={faUndo} /> Reset
+              <FontAwesomeIcon icon={faUndo} /> Réinitialiser
             </Button>
           </Card.Footer>
         </Form>
@@ -173,3 +188,12 @@ export default class Voiture extends Component {
     );
   }
 }
+
+// Création d'un composant fonctionnel pour récupérer les paramètres et le navigate
+const VoitureEdit = (props) => {
+  const { id } = useParams(); // Récupère l'ID depuis les paramètres de l'URL
+  const navigate = useNavigate(); // Utiliser useNavigate
+  return <VoitureEditClass {...props} id={id} navigate={navigate} />; // Passe l'ID et navigate au composant de classe
+};
+
+export default VoitureEdit;

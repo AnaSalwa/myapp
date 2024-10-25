@@ -71,11 +71,15 @@ export default class VoitureListe extends React.Component {
                     <td>{voiture.annee}</td>
                     <td>{voiture.prix} €</td>
                     <td>
-                      <Link to={"edit/" + voiture.id} className="btn btn-sm btn-outline-primary">
-                        <Button variant="warning" size="sm">
-                          <FontAwesomeIcon icon={faEdit} />
-                        </Button>
-                      </Link>{' '}
+                    <Link to={"/edit/" + voiture.id} className="btn btn-sm btn-outline-primary">
+                      <Button variant="warning" size="sm">
+                        <FontAwesomeIcon icon={faEdit} />
+                      </Button>
+                    </Link>
+
+
+                     
+
                  
 \                      <Button size="sm" variant="outline-danger" onClick={this.deleteVoiture.bind(this, voiture.id)}>
                         <FontAwesomeIcon icon={faTrash} />
